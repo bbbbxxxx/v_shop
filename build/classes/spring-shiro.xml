@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+       
+       <!-- encache设置 -->
+    <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager"/>  
+
+	<!--1.filter设置的第一步 -->
+	<bean id="PermissionFilter" class="com.dianshu.core.shiro.filter.PermissionCheckFilter" />
+	<bean id="RoleFilter" class="com.dianshu.core.shiro.filter.RoleFilter" />
+
+	<!-- web.xml中shiro的filter对应的bean -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="/u/login" />
+
+		<!-- 初始配置，现采用自定义 filterChainDefinitions 是filter的配置链 -->
+
+		<property name="filters">
+			<util:map>
+			<!--2.filter设置的第一步 -->
+				<entry key="PermissionFilter" value-ref="PermissionFilter"></entry>
+				<entry key="RoleFilter" value-ref="RoleFilter"></entry>
+			</util:map>
+		</property>
+		<property name="filterChainDefinitions">
+			<!-- 一般将/**放到下面 -->
+			<value>
+				<!-- -->
+				<!-- 请求logout，shiro清除session -->
+				<!-- /logout = logout -->
+				<!-- /** = authc所有的url都必须认证才能访问 -->
+				<!-- /** = authc -->
+				<!--3.filter设置的第一步 -->
+				
+				/user/**=authc
+				/role/**=authc
+				/permission/**=authc,PermissionFilter
+				/member/**=authc
+				/iteams/**=authc
+
+				/logout=logout
+			</value>
+		</property>
+	</bean>
+
+
+	<!-- secturyManager 安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="sampleRealm" /> 
+		<property name="cacheManager" ref="cacheManager"/>
+	</bean>
+
+	<!-- realm -->
+	<bean id="sampleRealm" class="com.dianshu.core.shiro.token.SampleRealm">
+	<property name="cachingEnabled" value="true"/>
+	<property name="authenticationCachingEnabled" value="true"/>
+	<property name="authenticationCacheName" value="shiro-authenticationCacheName"/>
+	<property name="authorizationCachingEnabled" value="true"/>
+	<property name="authorizationCacheName" value="shiro-authorizationCacheName"/>
+	</bean>
+</beans>
+
